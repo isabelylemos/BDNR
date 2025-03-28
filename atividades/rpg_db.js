@@ -1,4 +1,5 @@
-const { MongoClient } = require(mongodb)
+// Importar o modulo MongoClient
+const { MongoClient } = require("mongodb")
 
 // Função principal
 async function main() {
@@ -28,23 +29,27 @@ async function main() {
         { nome: "Steve Rogers", classe: "guerreiro", nivel: 3, habilidades: ["inspirar aliados", "força"], vida: 170 },
     ])
 
-    // enconrando personagens com nivel maior que 10
+    // encontrando personagens com nivel maior que 10
     const personagensSuperior = await personagens.find({ nivel: {$gt: 10} }).toArray()
     console.log("Personagens com nível maior que 10: ", personagensSuperior)
 
     // escontrando personagens da classe geurreiros
     const guerreiros = await personagens.find({ classe: "guerreiro" }).toArray()
-    console.log("Personagens da classe gierreiro: ", guerreiros)
+    console.log("Personagens da classe guerreiro: ", guerreiros)
 
     // atualizando a vida dos personagens para 200
     await personagens.updateMany(
+        { classe: "guerreiro" },
         { $set: { vida: 200 } }
     )
+    console.log("A vida dos personagens da classe guerreiro foi atualizada para 200!")
 
     // deletando personagens com vida menor que 30
     await personagens.deleteMany({ vida: { $lt: 30 } });
+    console.log("Personagens com a vida menor que 30 foram derrotados!")
 
   } finally {
+    // Fechar a conexão
     await client.close();
   }
 }

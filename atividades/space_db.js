@@ -8,66 +8,53 @@ async function main() {
  
   //Criar uma instância do cliente mongodb
   const client = new MongoClient(uri);
-
   try {
-    // Conect com o servidor MongoDB
     await client.connect();
- 
-    // Seleciona o banco de dados "space_db"
     const database = client.db("space_db");
- 
-    // Selecionando a coleção "naves"
     const naves = database.collection("naves");
 
-    //Inserindo dados do banco
-    await naves.insertMany([
-        { nome: "Estrela Cadente", tipo: "exploração", capacidadeTripulantes: "2", emMissao: true },
-        { nome: "Colossus", tipo: "carga", capacidadeTripulantes: "10", emMissao: true },
-        { nome: "Serenity", tipo: "mineração", capacidadeTripulantes: "15", emMissao: true },
-        { nome: "Galactica", tipo: "exploração", capacidadeTripulantes: "7", emMissao: false },
-    ])
+    // Inserindo dados do banco com capacidadeTripulantes como número
+    const navesInserir = await naves.insertMany([
+        { nome: "Estrela Cadente", tipo: "exploração", capacidadeTripulantes: 2, emMissao: true },
+        { nome: "Colossus", tipo: "carga", capacidadeTripulantes: 10, emMissao: true },
+        { nome: "Serenity", tipo: "mineração", capacidadeTripulantes: 15, emMissao: true },
+        { nome: "Galactica", tipo: "exploração", capacidadeTripulantes: 7, emMissao: false },
+    ]);
 
-    // encontrando naves que estão em missão
-    const missaoTrue = await naves.find({ emMissao: true }).toArray()
+    // Pegando os IDs 
+    const idsNaves = Object.values(navesInserir.insertedIds);
+
+    // Encontrando naves que estão em missão
+    const missaoTrue = await naves.find({ emMissao: true }).toArray();
     console.log("Naves em missão: ", missaoTrue);
 
-    //encontrando naves que tem capacidade maior que 5
-    const capaidadeMaxima = await naves.find({ capacidadeTripulantes: { $gt: 5 } }).toArray()
+    // Encontrando naves que têm capacidade maior que 5 tripulantes
+    const capacidadeMaxima = await naves.find({ capacidadeTripulantes: { $gt: 5 } }).toArray();
+    console.log("Naves com capacidade de tripulantes maior que 5: ", capacidadeMaxima);
 
-    // escontrando naves de carga que não estão em missão
-    await naves.updateMany(
-        { tipo: "carga" },  
-        { $set: { emMissao: false } } 
-      );
+    // Desativando naves de carga mudando o status de emMissao para false
+    await naves.updateMany({ tipo: "carga" }, { $set: { emMissao: false } });
+    console.log("Naves de carga foram desativadas temporariamente!");
 
-    // deletando naves com capacidade menor que 3
-    await naves.deleteMany({ capacidadeTripulantes: { $lt: 3 } }); 
+    // Deletando naves com capacidade menor que 3
+    await naves.deleteMany({ capacidadeTripulantes: { $lt: 3 } });
+    console.log("Naves com capacidade menor que 3 para tripulantes foram consideradas obsoletas.");
 
-    // Inserindo tripulantes relacionados a naves
+    // Criando nova coleção tripulantes e relacionando com as naves
+    const tripulantes = database.collection("tripulantes");
     await tripulantes.insertMany([
-    {
-      nome: "Isabely",
-      cargo: "Comandante",
-      naveId: await naves.findOne({ nome: "Estrela Cadente" })._id
-    },
-    {
-      nome: "Yasmin",
-      cargo: "Engenheira",
-      naveId: await naves.findOne({ nome: "Serenity" })._id
-    },
-    {
-      nome: "Gustavo",
-      cargo: "Piloto",
-      naveId: await naves.findOne({ nome: "Colossus" })._id
-    }
-  ]);
+      { nome: "Isabely Lemos", id_nave: idsNaves[0] },
+      { nome: "Yasmin Pires", id_nave: idsNaves[1] },
+      { nome: "Ana Flavia", id_nave: idsNaves[2] },
+    ]);
 
-    await tripulantes.find({ naveId: await naves.findOne({ nome: "Estrela Cadente" })._id });
+    console.log("Tripulantes inseridos com sucesso!");
 
-} finally {
+  } finally {
+     // Fechar a conexão
     await client.close();
   }
 }
 
-// Chama a função principal e captura o erro, caso haja
+// Chama a função principal e captura erros
 main().catch(console.error);
